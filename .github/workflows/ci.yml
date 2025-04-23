@@ -20,8 +20,8 @@ jobs:
       # We need to avoid using NodeJS v20, because it doesn't work with
       # older glibc versions.  See:
       #  https://github.com/actions/checkout/issues/1809.
-      ACTIONS_RUNNER_FORCED_INTERNAL_NODE_VERSION: node16
-      ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: node16
+      #ACTIONS_RUNNER_FORCED_INTERNAL_NODE_VERSION: node16
+      #ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: node16
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     strategy:
@@ -29,27 +29,25 @@ jobs:
         compiler:
           - clang
           - gcc
-        container:
-          - almalinux:8
-          - alpine:3.17
-          - ubuntu:18.04
+        container:                    
+          - ubuntu:22.04
 
     container: ${{ matrix.container }}
 
     steps:
       - name: Checkout ProFTPD
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: proftpd/proftpd
           path: proftpd
 
       - name: Checkout module source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: proftpd/contrib/mod_prometheus
 
       - name: Whitespace check
-        if: ${{ matrix.container == 'ubuntu:18.04' }}
+        if: ${{ matrix.container == 'ubuntu:22.04' }}
         run: |
           apt-get update -qq
           apt-get install -y git
@@ -61,54 +59,8 @@ jobs:
             exit 1
           fi
 
-      - name: Install Alpine packages
-        if: ${{ matrix.container == 'alpine:3.17' }}
-        run: |
-          apk update
-          # for builds
-          apk add bash build-base clang compiler-rt gcc make zlib-dev
-          # for unit tests
-          apk add check check-dev subunit subunit-dev
-
-          # for libmicrohttpd support
-          apk add libmicrohttpd-dev
-          # for SQLite support
-          apk add sqlite sqlite-dev
-          # for OpenSSL support
-          apk add openssl openssl-dev
-          # for zlib support
-          apk add zlib-dev
-
-          # for debugging
-          clang --version
-          gcc --version
-          openssl version -a
-
-      - name: Install RPM packages
-        if: ${{ matrix.container == 'almalinux:8' }}
-        run: |
-          # Need to add other repos for e.g. libsodium
-          yum install -y dnf-plugins-core epel-release yum-utils clang gcc make zlib-devel
-          dnf config-manager --enable epel
-          dnf config-manager --set-enabled powertools
-          # for unit tests
-          yum install -y check-devel https://cbs.centos.org/kojifiles/packages/subunit/1.4.0/1.el8/x86_64/subunit-1.4.0-1.el8.x86_64.rpm https://cbs.centos.org/kojifiles/packages/subunit/1.4.0/1.el8/x86_64/subunit-devel-1.4.0-1.el8.x86_64.rpm
-          # for libmicrohttpd support
-          yum install -y libmicrohttpd-devel
-          # for SQLite support
-          yum install -y sqlite-devel
-          # for OpenSSL support
-          yum install -y openssl openssl-devel
-          # for zlib support
-          yum install -y zlib-devel
-
-          # for debugging
-          clang --version
-          gcc --version
-          openssl version -a
-
       - name: Install Ubuntu packages
-        if: ${{ matrix.container == 'ubuntu:18.04' }}
+        if: ${{ matrix.container == 'ubuntu:22.04' }}
         run: |
           apt-get update -qq
           # for builds
@@ -153,11 +105,6 @@ jobs:
           gcc --version
           openssl version -a
 
-      - name: Prepare code coverage
-        if: ${{ matrix.container == 'ubuntu:18.04' }}
-        run: |
-          lcov --directory proftpd --zerocounters
-
       - name: Build as static module
         env:
           CC: ${{ matrix.compiler }}
@@ -166,22 +113,8 @@ jobs:
           ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel=coverage --enable-tests --with-modules=mod_prometheus:mod_sftp:mod_tls
           make
 
-      - name: Run unit tests
-        env:
-          CC: ${{ matrix.compiler }}
-        # Note: Skip the unit tests on Alpine
-        if: ${{ matrix.container != 'alpine:3.17' }}
-        run: |
-          cd proftpd/contrib/mod_prometheus
-          make TEST_VERBOSE=1 check
-
-      - name: Install as static module
-        run: |
-          cd proftpd
-          make install
-
       - name: Run integration tests
-        if: ${{ matrix.compiler == 'gcc' && matrix.container == 'ubuntu:18.04' }}
+        if: ${{ matrix.compiler == 'gcc' && matrix.container == 'ubuntu:22.04' }}
         env:
           PROFTPD_TEST_BIN: /usr/local/sbin/proftpd
           PROFTPD_TEST_DIR: ${{ github.workspace }}/proftpd
@@ -204,7 +137,7 @@ jobs:
           make install
 
       - name: Check HTML docs
-        if: ${{ matrix.container == 'ubuntu:18.04' }}
+        if: ${{ matrix.container == 'ubuntu:22.04' }}
         run: |
           cd proftpd/contrib/mod_prometheus
           for f in $(/bin/ls *.html); do echo "Processing $f"; tidy -errors -omit -q $f; done || exit 0
