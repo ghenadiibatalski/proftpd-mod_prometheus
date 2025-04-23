@@ -36,13 +36,13 @@ jobs:
 
     steps:
       - name: Checkout ProFTPD
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: proftpd/proftpd
           path: proftpd
 
       - name: Checkout module source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           path: proftpd/contrib/mod_prometheus
 
