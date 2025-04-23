@@ -54,7 +54,6 @@ jobs:
           cd proftpd/contrib/mod_prometheus
           pwd
           ls -al
-          git status
           if [ -n $(git diff --no-index --check HEAD^) ]; then
             echo "You must remove whitespace before submitting a pull request"
             echo ""
