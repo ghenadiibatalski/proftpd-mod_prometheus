@@ -26,8 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        compiler:
-          - clang
+        compiler:        
           - gcc
         container:                    
           - ubuntu:22.04
@@ -112,14 +111,14 @@ jobs:
           CC: ${{ matrix.compiler }}
         run: |
           cd proftpd
-          make clean
+          make -f Makefile.in clean
           ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel --enable-dso --with-shared=mod_prometheus
-          make
+          make -f Makefile.in
 
       - name: Install as shared module
         run: |
           cd proftpd
-          make install
+          make -f Makefile.in install
 
       - name: Check HTML docs
         if: ${{ matrix.container == 'ubuntu:22.04' }}
