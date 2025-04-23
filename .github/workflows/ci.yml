@@ -55,7 +55,7 @@ jobs:
           pwd
           ls -al
           git status
-          if [ -n $(git diff --check HEAD^) ]; then
+          if [ -n $(git diff --no-index --check HEAD^) ]; then
             echo "You must remove whitespace before submitting a pull request"
             echo ""
             git diff --check HEAD^
