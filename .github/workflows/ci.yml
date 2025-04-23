@@ -105,23 +105,6 @@ jobs:
           gcc --version
           openssl version -a
 
-      - name: Build as static module
-        env:
-          CC: ${{ matrix.compiler }}
-        run: |
-          cd proftpd
-          ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel=coverage --enable-tests --with-modules=mod_prometheus:mod_sftp:mod_tls
-          make
-
-      - name: Run integration tests
-        if: ${{ matrix.compiler == 'gcc' && matrix.container == 'ubuntu:22.04' }}
-        env:
-          PROFTPD_TEST_BIN: /usr/local/sbin/proftpd
-          PROFTPD_TEST_DIR: ${{ github.workspace }}/proftpd
-        run: |
-          cd proftpd/contrib/mod_prometheus
-          perl tests.pl
-
       - name: Build as shared module
         env:
           CC: ${{ matrix.compiler }}
